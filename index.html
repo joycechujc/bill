@@ -3,28 +3,30 @@ import { Plus, Trash2, UserPlus } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
 const ExpenseTracker = () => {
+  // State declarations
   const [participants, setParticipants] = useState([]);
   const [newParticipant, setNewParticipant] = useState('');
   const [expenses, setExpenses] = useState([]);
   const [newExpense, setNewExpense] = useState({
     description: '',
     amount: '',
-    currency: '$',
+    currency: '£',
     paidBy: '',
     splitBetween: []
   });
 
-  // Airtable configuration
-  const AIRTABLE_PERSONAL_TOKEN = 'patG3xfFhZGjGiXWt.8959878dca997d69972b237177713462c43fe7f385ab43d7d45ce500f104d703';
+  // Constants
+  const AIRTABLE_PERSONAL_ACCESS_TOKEN = 'patG3xfFhZGjGiXWt.8959878dca997d69972b237177713462c43fe7f385ab43d7d45ce500f104d703';
   const AIRTABLE_BASE_ID = 'app7aGU54LVkhT1fd';
   const AIRTABLE_TABLE_NAME = 'Expenses';
 
   const currencies = [
     { symbol: '£', label: 'GBP' },
-    { symbol: '€', label: 'EUR' }
-    { symbol: '$', label: 'HKD' },
+    { symbol: '€', label: 'EUR' },
+    { symbol: 'HK$', label: 'HKD' }
   ];
 
+  // Functions
   const addParticipant = (e) => {
     e.preventDefault();
     if (newParticipant && !participants.includes(newParticipant)) {
@@ -38,7 +40,7 @@ const ExpenseTracker = () => {
       const response = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_NAME}`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${AIRTABLE_PERSONAL_TOKEN}`,
+          'Authorization': `Bearer ${AIRTABLE_PERSONAL_ACCESS_TOKEN}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
@@ -86,7 +88,7 @@ const ExpenseTracker = () => {
       setNewExpense({
         description: '',
         amount: '',
-        currency: '$',
+        currency: '£',
         paidBy: '',
         splitBetween: []
       });
@@ -258,7 +260,7 @@ const ExpenseTracker = () => {
               <div key={person} className="flex justify-between p-2 border-b">
                 <span>{person}</span>
                 <span className={amount > 0 ? 'text-green-500' : 'text-red-500'}>
-                  ${amount.toFixed(2)}
+                  {newExpense.currency}{amount.toFixed(2)}
                 </span>
               </div>
             ))}
