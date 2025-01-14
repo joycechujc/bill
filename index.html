@@ -1,1 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense Splitter</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"],
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .participants-list,
+        .expenses-list {
+            margin-top: 20px;
+        }
+        .expense-item {
+            border-bottom: 1px solid #ddd;
+            padding: 10px 0;
+        }
+        .summary {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e9f7ef;
+            border-radius: 4px;
+        }
+        .manual-split {
+            display: none;
+        }
+        .currency-group {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Expense Splitter</h1>
+        
+        <!-- Add Participants Section -->
+        <div class="form-group">
+            <label for="participant">Add Participant:</label>
+            <input type="text" id="participant" placeholder="Enter name">
+            <button onclick="addParticipant()">Add</button>
+        </div>
+        <div id="participantsList" class="participants-list"></div>
 
+        <!-- Add Expense Section -->
+        <div class="form-group">
+            <h2>Add Expense</h2>
+            <label for="description">Description:</label>
+            <input type="text" id="description" placeholder="What was it for?">
+            
+            <label for="amount">Amount:</label>
+            <input type="number" id="amount" step="0.01" min="0">
+            
+            <label for="currency">Currency:</label>
+            <select id="currency">
+                <option value="GBP">GBP (£)</option>
+                <option value="EUR">EUR (€)</option>
+                <option value="HKD">HKD ($)</option>
+            </select>
+            
+            <label for="paidBy">Paid by:</label>
+            <select id="paidBy"></select>
+            
+            <label for="splitType">Split type:</label>
+            <select id="splitType" onchange="toggleSplitType()">
+                <option value="equal">Split equally</option>
+                <option value="manual">Split manually</option>
+            </select>
+            
+            <div id="manualSplit" class="manual-split"></div>
+            
+            <button onclick="addExpense()">Add Expense</button>
+        </div>
+
+        <!-- Expenses List -->
+        <div id="expensesList" class="expenses-list"></div>
+
+        <!-- Summary Section -->
+        <div id="summary" class="summary"></div>
+    </div>
+
+    <script>
+        let participants = [];
+        let expenses = [];
+
+        function addParticipant() {
+            const name = document.getElementById('participant').value.trim();
+            if (name && !participants.includes(name)) {
+                participants.push(name);
+                updateParticipantsList();
+                updatePaidByDropdown();
+                document.getElementById('participant').value = '';
+            }
+        }
+
+        function updateParticipantsList() {
+            const list = document.getElementById('participantsList');
+            list.innerHTML = '<h3>Participants:</h3>' + 
+                participants.map(p => `<div>${p}</div>`).join('');
+        }
+
+        function updatePaidByDropdown() {
+            const select = document.getElementById('paidBy');
+            select.innerHTML = participants
+                .map(p => `<option value="${p}">${p}</option>`)
+                .join('');
+        }
+
+        function toggleSplitType() {
+            const manualSplit = document.getElementById('manualSplit');
+            const splitType = document.getElementById('splitType').value;
+            
+            if (splitType === 'manual') {
+                manualSplit.style.display = 'block';
+                manualSplit.innerHTML = participants
+                    .map(p => `
+                        <div class="form-group">
+                            <label for="split_${p}">${p}'s share:</label>
+                            <input type="number" id="split_${p}" step="0.01" min="0">
+                        </div>
+                    `).join('');
+            } else {
+                manualSplit.style.display = 'none';
+            }
+        }
+
+        function addExpense() {
+            const description = document.getElementById('description').value;
+            const amount = parseFloat(document.getElementById('amount').value);
+            const currency = document.getElementById('currency').value;
+            const paidBy = document.getElementById('paidBy').value;
+            const splitType = document.getElementById('splitType').value;
+            
+            if (!description || !amount || !paidBy) return;
+
+            let shares = {};
+            if (splitType === 'equal') {
+                const perPerson = amount / participants.length;
+                participants.forEach(p => shares[p] = perPerson);
+            } else {
+                participants.forEach(p => {
+                    shares[p] = parseFloat(document.getElementById(`split_${p}`).value) || 0;
+                });
+            }
+
+            expenses.push({
+                description,
+                amount,
+                currency,
+                paidBy,
+                shares
+            });
+
+            updateExpensesList();
+            updateSummary();
+            
+            // Reset form
+            document.getElementById('description').value = '';
+            document.getElementById('amount').value = '';
+            document.getElementById('splitType').value = 'equal';
+            document.getElementById('manualSplit').style.display = 'none';
+        }
+
+        function updateExpensesList() {
+            const list = document.getElementById('expensesList');
+            list.innerHTML = '<h2>Expenses</h2>' + expenses
+                .map(e => `
+                    <div class="expense-item">
+                        <strong>${e.description}</strong>
+                        <div>Amount: ${getCurrencySymbol(e.currency)}${e.amount}</div>
+                        <div>Paid by: ${e.paidBy}</div>
+                        <div>Shares: ${Object.entries(e.shares)
+                            .map(([p, s]) => `${p}: ${getCurrencySymbol(e.currency)}${s.toFixed(2)}`)
+                            .join(', ')}
+                        </div>
+                    </div>
+                `).join('');
+        }
+
+        function getCurrencySymbol(currency) {
+            const symbols = {
+                'GBP': '£',
+                'EUR': '€',
+                'HKD': '$'
+            };
+            return symbols[currency] || '';
+        }
+
+        function updateSummary() {
+            const balances = {};
+            const currencyBalances = {
+                'GBP': {},
+                'EUR': {},
+                'HKD': {}
+            };
+
+            // Initialize balances
+            participants.forEach(p => {
+                Object.keys(currencyBalances).forEach(currency => {
+                    currencyBalances[currency][p] = 0;
+                });
+            });
+
+            // Calculate balances per currency
+            expenses.forEach(e => {
+                const currency = e.currency;
+                
+                // Add what each person paid
+                if (currencyBalances[currency][e.paidBy]) {
+                    currencyBalances[currency][e.paidBy] += e.amount;
+                }
+                
+                // Subtract what each person owes
+                Object.entries(e.shares).forEach(([person, share]) => {
+                    currencyBalances[currency][person] -= share;
+                });
+            });
+
+            // Generate summary HTML
+            const summary = document.getElementById('summary');
+            summary.innerHTML = '<h2>Settlement Summary</h2>' +
+                Object.entries(currencyBalances)
+                    .map(([currency, balances]) => {
+                        const nonZeroBalances = Object.entries(balances)
+                            .filter(([_, balance]) => Math.abs(balance) > 0.01)
+                            .map(([person, balance]) => 
+                                `${person}: ${getCurrencySymbol(currency)}${balance.toFixed(2)}`
+                            );
+                        
+                        return nonZeroBalances.length ? 
+                            `<h3>${currency} Balances:</h3>
+                            <div>${nonZeroBalances.join('<br>')}</div>` : '';
+                    })
+                    .join('');
+        }
+    </script>
+</body>
+</html>
