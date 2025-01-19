@@ -5,272 +5,420 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Expense Splitter</title>
     <style>
+        :root {
+            --primary-blue: #87CEEB;
+            --primary-pink: #FFB6C1;
+            --dark-blue: #1e3a8a;
+        }
+
         body {
             font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
+            margin: 0;
             padding: 20px;
-            background-color: #f5f5f5;
+            background-color: var(--dark-blue);
+            color: white;
         }
+
         .container {
-            background-color: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            max-width: 1200px;
+            margin: 0 auto;
         }
+
+        .card {
+            background-color: var(--primary-blue);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .pink-card {
+            background-color: var(--primary-pink);
+        }
+
         .form-group {
             margin-bottom: 15px;
         }
-        .form-group label {
+
+        label {
             display: block;
             margin-bottom: 5px;
+            color: var(--dark-blue);
             font-weight: bold;
         }
-        input[type="text"],
-        input[type="number"],
-        select {
+
+        input, select {
             width: 100%;
             padding: 8px;
             border: 1px solid #ddd;
             border-radius: 4px;
             box-sizing: border-box;
         }
+
         button {
-            background-color: #4CAF50;
+            background-color: var(--dark-blue);
             color: white;
-            padding: 10px 15px;
+            padding: 10px 20px;
             border: none;
             border-radius: 4px;
             cursor: pointer;
         }
+
         button:hover {
-            background-color: #45a049;
+            opacity: 0.9;
         }
-        .participants-list,
-        .expenses-list {
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
             margin-top: 20px;
         }
-        .expense-item {
+
+        th, td {
+            padding: 12px;
+            text-align: left;
             border-bottom: 1px solid #ddd;
-            padding: 10px 0;
+            color: var(--dark-blue);
         }
-        .summary {
-            margin-top: 20px;
-            padding: 15px;
-            background-color: #e9f7ef;
-            border-radius: 4px;
-        }
-        .manual-split {
+
+        .split-amounts {
             display: none;
         }
-        .currency-group {
-            margin-top: 20px;
+
+        .split-amounts.show {
+            display: block;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Expense Splitter</h1>
-        
-        <!-- Add Participants Section -->
-        <div class="form-group">
-            <label for="participant">Add Participant:</label>
-            <input type="text" id="participant" placeholder="Enter name">
-            <button onclick="addParticipant()">Add</button>
+        <!-- Participants Section -->
+        <div class="card" id="participants-section">
+            <h2>Add Participants</h2>
+            <div class="form-group">
+                <input type="text" id="participant-name" placeholder="Enter participant name">
+                <button onclick="addParticipant()">Add Participant</button>
+            </div>
+            <div id="participants-list"></div>
         </div>
-        <div id="participantsList" class="participants-list"></div>
 
         <!-- Add Expense Section -->
-        <div class="form-group">
-            <h2>Add Expense</h2>
-            <label for="description">Description:</label>
-            <input type="text" id="description" placeholder="What was it for?">
-            
-            <label for="amount">Amount:</label>
-            <input type="number" id="amount" step="0.01" min="0">
-            
-            <label for="currency">Currency:</label>
-            <select id="currency">
-                <option value="GBP">GBP (£)</option>
-                <option value="EUR">EUR (€)</option>
-                <option value="HKD">HKD ($)</option>
-            </select>
-            
-            <label for="paidBy">Paid by:</label>
-            <select id="paidBy"></select>
-            
-            <label for="splitType">Split type:</label>
-            <select id="splitType" onchange="toggleSplitType()">
-                <option value="equal">Split equally</option>
-                <option value="manual">Split manually</option>
-            </select>
-            
-            <div id="manualSplit" class="manual-split"></div>
-            
+        <div class="card">
+            <h2>Add Expenses</h2>
+            <div class="form-group">
+                <label>Description</label>
+                <input type="text" id="expense-description">
+            </div>
+            <div class="form-group">
+                <label>Amount</label>
+                <input type="number" id="expense-amount" step="0.01">
+            </div>
+            <div class="form-group">
+                <label>Currency</label>
+                <select id="currency">
+                    <option value="GBP">GBP £</option>
+                    <option value="EUR">EUR €</option>
+                    <option value="HKD">HKD $</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Paid By</label>
+                <select id="paid-by"></select>
+            </div>
+            <div class="form-group">
+                <label>Split Type</label>
+                <select id="split-type" onchange="toggleSplitAmounts()">
+                    <option value="equal">Split Equally</option>
+                    <option value="manual">Split Manually</option>
+                </select>
+            </div>
+            <div id="split-amounts" class="split-amounts">
+                <!-- Will be populated dynamically -->
+            </div>
             <button onclick="addExpense()">Add Expense</button>
         </div>
 
-        <!-- Expenses List -->
-        <div id="expensesList" class="expenses-list"></div>
+        <!-- Transactions Section -->
+        <div class="card pink-card">
+            <h2>Transactions</h2>
+            <table id="transactions-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Description</th>
+                        <th>Amount</th>
+                        <th>Who Paid</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
 
-        <!-- Summary Section -->
-        <div id="summary" class="summary"></div>
+        <!-- Settlement Summary -->
+        <div class="card pink-card">
+            <h2>Settlement Summary</h2>
+            <div id="settlement-summary"></div>
+        </div>
     </div>
 
     <script>
-        let participants = [];
-        let expenses = [];
+        const AIRTABLE_TOKEN = 'patG3xfFhZGjGiXWt.8959878dca997d69972b237177713462c43fe7f385ab43d7d45ce500f104d703';
+        const BASE_ID = 'app7aGU54LVkhT1fd';
+        const participants = [];
+        const expenses = [];
 
-        function addParticipant() {
-            const name = document.getElementById('participant').value.trim();
-            if (name && !participants.includes(name)) {
-                participants.push(name);
-                updateParticipantsList();
-                updatePaidByDropdown();
-                document.getElementById('participant').value = '';
+        async function addParticipant() {
+            const name = document.getElementById('participant-name').value.trim();
+            if (!name) return;
+
+            participants.push(name);
+            updateParticipantsList();
+            updatePaidBySelect();
+            document.getElementById('participant-name').value = '';
+
+            // Save to Airtable
+            try {
+                await fetch(`https://api.airtable.com/v0/${BASE_ID}/Participants`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${AIRTABLE_TOKEN}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        fields: {
+                            Name: name
+                        }
+                    })
+                });
+            } catch (error) {
+                console.error('Error saving participant:', error);
             }
         }
 
         function updateParticipantsList() {
-            const list = document.getElementById('participantsList');
-            list.innerHTML = '<h3>Participants:</h3>' + 
-                participants.map(p => `<div>${p}</div>`).join('');
+            const list = document.getElementById('participants-list');
+            list.innerHTML = participants.map(p => `<div>${p}</div>`).join('');
         }
 
-        function updatePaidByDropdown() {
-            const select = document.getElementById('paidBy');
-            select.innerHTML = participants
-                .map(p => `<option value="${p}">${p}</option>`)
-                .join('');
+        function updatePaidBySelect() {
+            const select = document.getElementById('paid-by');
+            select.innerHTML = participants.map(p => `<option value="${p}">${p}</option>`).join('');
         }
 
-        function toggleSplitType() {
-            const manualSplit = document.getElementById('manualSplit');
-            const splitType = document.getElementById('splitType').value;
+        function toggleSplitAmounts() {
+            const splitType = document.getElementById('split-type').value;
+            const splitAmountsDiv = document.getElementById('split-amounts');
+            splitAmountsDiv.className = `split-amounts ${splitType === 'manual' ? 'show' : ''}`;
             
             if (splitType === 'manual') {
-                manualSplit.style.display = 'block';
-                manualSplit.innerHTML = participants
-                    .map(p => `
-                        <div class="form-group">
-                            <label for="split_${p}">${p}'s share:</label>
-                            <input type="number" id="split_${p}" step="0.01" min="0">
-                        </div>
-                    `).join('');
-            } else {
-                manualSplit.style.display = 'none';
+                const amount = parseFloat(document.getElementById('expense-amount').value) || 0;
+                const html = participants.map((p, i) => `
+                    <div class="form-group">
+                        <label>${p}'s share</label>
+                        <input type="number" step="0.01" class="split-amount" 
+                               onchange="updateLastSplitAmount()"
+                               ${i === participants.length - 1 ? 'readonly' : ''}>
+                    </div>
+                `).join('');
+                splitAmountsDiv.innerHTML = html;
+                updateLastSplitAmount();
             }
         }
 
-        function addExpense() {
-            const description = document.getElementById('description').value;
-            const amount = parseFloat(document.getElementById('amount').value);
+        function updateLastSplitAmount() {
+            const totalAmount = parseFloat(document.getElementById('expense-amount').value) || 0;
+            const splitInputs = document.getElementsByClassName('split-amount');
+            if (splitInputs.length === 0) return;
+
+            let sum = 0;
+            for (let i = 0; i < splitInputs.length - 1; i++) {
+                sum += parseFloat(splitInputs[i].value) || 0;
+            }
+            splitInputs[splitInputs.length - 1].value = (totalAmount - sum).toFixed(2);
+        }
+
+        async function addExpense() {
+            const description = document.getElementById('expense-description').value;
+            const amount = parseFloat(document.getElementById('expense-amount').value);
             const currency = document.getElementById('currency').value;
-            const paidBy = document.getElementById('paidBy').value;
-            const splitType = document.getElementById('splitType').value;
-            
-            if (!description || !amount || !paidBy) return;
+            const paidBy = document.getElementById('paid-by').value;
+            const splitType = document.getElementById('split-type').value;
 
             let shares = {};
             if (splitType === 'equal') {
-                const perPerson = amount / participants.length;
-                participants.forEach(p => shares[p] = perPerson);
+                const share = amount / participants.length;
+                participants.forEach(p => shares[p] = share);
             } else {
-                participants.forEach(p => {
-                    shares[p] = parseFloat(document.getElementById(`split_${p}`).value) || 0;
-                });
+                const splitInputs = document.getElementsByClassName('split-amount');
+                participants.forEach((p, i) => shares[p] = parseFloat(splitInputs[i].value) || 0);
             }
 
-            expenses.push({
+            const expense = {
                 description,
                 amount,
                 currency,
                 paidBy,
-                shares
-            });
+                shares,
+                date: new Date().toISOString()
+            };
 
-            updateExpensesList();
-            updateSummary();
-            
-            // Reset form
-            document.getElementById('description').value = '';
-            document.getElementById('amount').value = '';
-            document.getElementById('splitType').value = 'equal';
-            document.getElementById('manualSplit').style.display = 'none';
+            expenses.push(expense);
+            updateTransactionsTable();
+            updateSettlementSummary();
+
+            // Save to Airtable
+            try {
+                await fetch(`https://api.airtable.com/v0/${BASE_ID}/Expenses`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${AIRTABLE_TOKEN}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        fields: {
+                            Description: description,
+                            Amount: amount,
+                            Currency: currency,
+                            PaidBy: paidBy,
+                            Shares: JSON.stringify(shares),
+                            Date: expense.date
+                        }
+                    })
+                });
+            } catch (error) {
+                console.error('Error saving expense:', error);
+            }
+
+            // Clear form
+            document.getElementById('expense-description').value = '';
+            document.getElementById('expense-amount').value = '';
+            document.getElementById('split-amounts').innerHTML = '';
         }
 
-        function updateExpensesList() {
-            const list = document.getElementById('expensesList');
-            list.innerHTML = '<h2>Expenses</h2>' + expenses
-                .map(e => `
-                    <div class="expense-item">
-                        <strong>${e.description}</strong>
-                        <div>Amount: ${getCurrencySymbol(e.currency)}${e.amount}</div>
-                        <div>Paid by: ${e.paidBy}</div>
-                        <div>Shares: ${Object.entries(e.shares)
-                            .map(([p, s]) => `${p}: ${getCurrencySymbol(e.currency)}${s.toFixed(2)}`)
-                            .join(', ')}
-                        </div>
-                    </div>
-                `).join('');
+        function updateTransactionsTable() {
+            const tbody = document.querySelector('#transactions-table tbody');
+            tbody.innerHTML = expenses.map(e => `
+                <tr>
+                    <td>${new Date(e.date).toLocaleDateString()}</td>
+                    <td>${e.description}</td>
+                    <td>${getCurrencySymbol(e.currency)}${e.amount.toFixed(2)}</td>
+                    <td>${e.paidBy}</td>
+                </tr>
+            `).join('');
         }
 
         function getCurrencySymbol(currency) {
-            const symbols = {
-                'GBP': '£',
-                'EUR': '€',
-                'HKD': '$'
-            };
+            const symbols = { 'GBP': '£', 'EUR': '€', 'HKD': '$' };
             return symbols[currency] || '';
         }
 
-        function updateSummary() {
+        function updateSettlementSummary() {
             const balances = {};
-            const currencyBalances = {
-                'GBP': {},
-                'EUR': {},
-                'HKD': {}
-            };
-
+            const currencies = ['GBP', 'EUR', 'HKD'];
+            
             // Initialize balances
             participants.forEach(p => {
-                Object.keys(currencyBalances).forEach(currency => {
-                    currencyBalances[currency][p] = 0;
-                });
+                balances[p] = {};
+                currencies.forEach(c => balances[p][c] = 0);
             });
 
-            // Calculate balances per currency
+            // Calculate balances
             expenses.forEach(e => {
-                const currency = e.currency;
+                // Add full amount to payer
+                balances[e.paidBy][e.currency] += e.amount;
                 
-                // Add what each person paid
-                if (currencyBalances[currency][e.paidBy]) {
-                    currencyBalances[currency][e.paidBy] += e.amount;
-                }
-                
-                // Subtract what each person owes
-                Object.entries(e.shares).forEach(([person, share]) => {
-                    currencyBalances[currency][person] -= share;
+                // Subtract shares from each participant
+                Object.entries(e.shares).forEach(([participant, share]) => {
+                    balances[participant][e.currency] -= share;
                 });
             });
 
-            // Generate summary HTML
-            const summary = document.getElementById('summary');
-            summary.innerHTML = '<h2>Settlement Summary</h2>' +
-                Object.entries(currencyBalances)
-                    .map(([currency, balances]) => {
-                        const nonZeroBalances = Object.entries(balances)
-                            .filter(([_, balance]) => Math.abs(balance) > 0.01)
-                            .map(([person, balance]) => 
-                                `${person}: ${getCurrencySymbol(currency)}${balance.toFixed(2)}`
-                            );
+            // Generate settlement instructions
+            const summary = document.getElementById('settlement-summary');
+            let html = '';
+
+            currencies.forEach(currency => {
+                const symbol = getCurrencySymbol(currency);
+                const currencyBalances = Object.entries(balances)
+                    .map(([name, bal]) => ({ name, amount: bal[currency] }))
+                    .filter(b => Math.abs(b.amount) > 0.01);
+
+                if (currencyBalances.length > 0) {
+                    html += `<h3>${currency} Settlements:</h3>`;
+                    
+                    // Find who needs to pay whom
+                    while (currencyBalances.length > 1) {
+                        const payer = currencyBalances.find(b => b.amount < 0);
+                        const receiver = currencyBalances.find(b => b.amount > 0);
                         
-                        return nonZeroBalances.length ? 
-                            `<h3>${currency} Balances:</h3>
-                            <div>${nonZeroBalances.join('<br>')}</div>` : '';
-                    })
-                    .join('');
+                        const amount = Math.min(Math.abs(payer.amount), receiver.amount);
+                        html += `<div>${payer.name} pay ${receiver.name} ${symbol}${amount.toFixed(2)}</div>`;
+                        
+                        payer.amount += amount;
+                        receiver.amount -= amount;
+                        
+                        // Remove settled balances
+                        const filtered = currencyBalances.filter(b => Math.abs(b.amount) > 0.01);
+                        currencyBalances.length = 0;
+                        currencyBalances.push(...filtered);
+                    }
+                }
+            });
+
+            summary.innerHTML = html;
         }
+
+        // Initial load of expenses from Airtable
+        async function loadExpenses() {
+            try {
+                const response = await fetch(`https://api.airtable.com/v0/${BASE_ID}/Expenses`, {
+                    headers: {
+                        'Authorization': `Bearer ${AIRTABLE_TOKEN}`
+                    }
+                });
+                const data = await response.json();
+                
+                data.records.forEach(record => {
+                    expenses.push({
+                        description: record.fields.Description,
+                        amount: record.fields.Amount,
+                        currency: record.fields.Currency,
+                        paidBy: record.fields.PaidBy,
+                        shares: JSON.parse(record.fields.Shares),
+                        date: record.fields.Date
+                    });
+                });
+
+                updateTransactionsTable();
+                updateSettlementSummary();
+            } catch (error) {
+                console.error('Error loading expenses:', error);
+            }
+        }
+
+        // Initial load of participants from Airtable
+        async function loadParticipants() {
+            try {
+                const response = await fetch(`https://api.airtable.com/v0/${BASE_ID}/Participants`, {
+                    headers: {
+                        'Authorization': `Bearer ${AIRTABLE_TOKEN}`
+                    }
+                });
+                const data = await response.json();
+                
+                data.records.forEach(record => {
+                    participants.push(record.fields.Name);
+                });
+
+                updateParticipantsList();
+                updatePaidBySelect();
+            } catch (error) {
+                console.error('Error loading participants:', error);
+            }
+        }
+
+        // Load data on page load
+        loadParticipants();
+        loadExpenses();
     </script>
 </body>
 </html>
