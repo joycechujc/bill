@@ -1,252 +1,245 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Expense Splitter</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #1e3a8a;
-      color: white;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Splitwise-like Web App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+        }
 
-    .container {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: space-between;
-      padding: 20px;
-      gap: 20px;
-      max-width: 1200px;
-    }
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            background: #fff;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
 
-    .card {
-      background-color: #3b82f6;
-      border-radius: 10px;
-      padding: 20px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-      color: white;
-    }
+        h1 {
+            text-align: center;
+        }
 
-    .card h2 {
-      margin-bottom: 20px;
-      font-size: 18px;
-    }
+        .form-group {
+            margin-bottom: 15px;
+        }
 
-    .form-group {
-      margin-bottom: 10px;
-    }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
 
-    label {
-      display: block;
-      margin-bottom: 5px;
-      font-weight: bold;
-    }
+        input, select, button {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
 
-    input, select {
-      width: 100%;
-      padding: 8px;
-      border: none;
-      border-radius: 5px;
-    }
+        .participants-list {
+            margin-top: 10px;
+            padding-left: 15px;
+        }
 
-    .button {
-      background-color: #1d4ed8;
-      color: white;
-      padding: 10px 15px;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      margin-top: 10px;
-    }
+        .summary {
+            margin-top: 20px;
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+        }
 
-    .button:hover {
-      background-color: #2563eb;
-    }
+        .settlement {
+            font-weight: bold;
+            color: #2c7;
+        }
 
-    .transaction-table, .balance-summary {
-      width: 100%;
-      margin-top: 20px;
-      border-collapse: collapse;
-      text-align: left;
-      background-color: white;
-      color: black;
-    }
+        button {
+            background-color: #28a745;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
 
-    th, td {
-      padding: 10px;
-      border: 1px solid #ddd;
-    }
+        button:hover {
+            background-color: #218838;
+        }
+    </style>
+    <script>
+        let participants = [];
+        let expenses = [];
 
-    th {
-      background-color: #3b82f6;
-      color: white;
-    }
+        function addParticipant() {
+            const name = document.getElementById('participant-name').value.trim();
+            if (name && !participants.includes(name)) {
+                participants.push(name);
+                updateParticipantsList();
+            }
+            document.getElementById('participant-name').value = '';
+        }
 
-    .settlement-summary {
-      margin-top: 20px;
-      background-color: #f87171;
-      padding: 20px;
-      border-radius: 10px;
-      color: black;
-    }
+        function updateParticipantsList() {
+            const list = document.getElementById('participants-list');
+            list.innerHTML = participants.map(p => `<li>${p}</li>`).join('');
+        }
 
-  </style>
+        function addExpense() {
+            const description = document.getElementById('expense-description').value;
+            const amount = parseFloat(document.getElementById('expense-amount').value);
+            const paidBy = document.getElementById('paid-by').value;
+            const splitMethod = document.getElementById('split-method').value;
+            const currency = document.getElementById('currency').value;
+
+            let splitAmounts = [];
+            if (splitMethod === 'equally') {
+                const equalAmount = (amount / participants.length).toFixed(2);
+                splitAmounts = participants.map(() => parseFloat(equalAmount));
+            } else {
+                const manualAmounts = participants.map((p, index) => {
+                    const input = document.getElementById(`manual-input-${index}`).value;
+                    return parseFloat(input) || 0;
+                });
+
+                const totalManual = manualAmounts.reduce((sum, val) => sum + val, 0);
+                if (totalManual !== amount) {
+                    manualAmounts[manualAmounts.length - 1] += (amount - totalManual);
+                }
+                splitAmounts = manualAmounts;
+            }
+
+            expenses.push({
+                description,
+                amount,
+                paidBy,
+                splitAmounts,
+                currency
+            });
+
+            updateExpensesList();
+            resetExpenseForm();
+        }
+
+        function updateExpensesList() {
+            const list = document.getElementById('expenses-list');
+            list.innerHTML = expenses.map((e, index) => `
+                <li>
+                    ${e.description} - ${e.amount} ${e.currency}, Paid by: ${e.paidBy}, Split: ${e.splitAmounts.join(', ')}
+                </li>
+            `).join('');
+        }
+
+        function resetExpenseForm() {
+            document.getElementById('expense-description').value = '';
+            document.getElementById('expense-amount').value = '';
+            document.getElementById('paid-by').value = participants[0];
+            document.getElementById('split-method').value = 'equally';
+        }
+
+        function updateSplitMethod() {
+            const splitMethod = document.getElementById('split-method').value;
+            const manualSplitDiv = document.getElementById('manual-split');
+            if (splitMethod === 'manual') {
+                manualSplitDiv.innerHTML = participants.map((p, index) => `
+                    <label>${p}</label>
+                    <input type="number" id="manual-input-${index}" placeholder="Amount for ${p}">
+                `).join('');
+            } else {
+                manualSplitDiv.innerHTML = '';
+            }
+        }
+
+        function calculateSettlement() {
+            const balances = {};
+            participants.forEach(p => balances[p] = 0);
+
+            expenses.forEach(e => {
+                e.splitAmounts.forEach((amount, index) => {
+                    balances[participants[index]] -= amount;
+                });
+                balances[e.paidBy] += e.amount;
+            });
+
+            const settlements = [];
+            const creditors = Object.entries(balances).filter(([_, balance]) => balance > 0);
+            const debtors = Object.entries(balances).filter(([_, balance]) => balance < 0);
+
+            while (creditors.length && debtors.length) {
+                const [creditor, creditAmount] = creditors.pop();
+                const [debtor, debtAmount] = debtors.pop();
+                const settlementAmount = Math.min(creditAmount, -debtAmount);
+
+                settlements.push(`${debtor} pays ${creditor} ${settlementAmount.toFixed(2)}`);
+
+                if (creditAmount > settlementAmount) {
+                    creditors.push([creditor, creditAmount - settlementAmount]);
+                }
+
+                if (-debtAmount > settlementAmount) {
+                    debtors.push([debtor, debtAmount + settlementAmount]);
+                }
+            }
+
+            document.getElementById('settlement-summary').innerText = settlements.join('\n');
+        }
+
+    </script>
 </head>
 <body>
+    <div class="container">
+        <h1>Splitwise-like App</h1>
 
-<div class="container">
-  <div class="card" style="flex: 1;">
-    <h2>Add Participants</h2>
-    <div id="participants-list"></div>
-    <input type="text" id="new-participant" placeholder="Enter participant name">
-    <button class="button" onclick="addParticipant()">Add Participant</button>
-  </div>
-
-  <div class="card" style="flex: 2;">
-    <h2>Add Expenses</h2>
-    <div class="form-group">
-      <label for="description">Description</label>
-      <input type="text" id="description">
-    </div>
-
-    <div class="form-group">
-      <label for="amount">Amount</label>
-      <input type="number" id="amount" min="0">
-    </div>
-
-    <div class="form-group">
-      <label for="paid-by">Paid By</label>
-      <select id="paid-by"></select>
-    </div>
-
-    <div class="form-group">
-      <label for="currency">Currency</label>
-      <select id="currency">
-        <option value="GBP">GBP (£)</option>
-        <option value="EUR">EUR (€)</option>
-        <option value="HKD">HKD ($)</option>
-      </select>
-    </div>
-
-    <h3>Split Amount</h3>
-    <div id="split-amounts"></div>
-    <button class="button" onclick="addExpense()">Add Expense</button>
-  </div>
-
-  <div class="card" style="flex: 1;">
-    <h2>Balance</h2>
-    <table class="balance-summary" id="balance-summary">
-      <thead>
-        <tr>
-          <th>Participant</th>
-          <th>GBP (£)</th>
-          <th>EUR (€)</th>
-          <th>HKD ($)</th>
-        </tr>
-      </thead>
-      <tbody>
-      </tbody>
-    </table>
-  </div>
-</div>
-
-<div class="card" style="width: 100%;">
-  <h2>Transactions</h2>
-  <table class="transaction-table" id="transactions">
-    <thead>
-      <tr>
-        <th>Date</th>
-        <th>Description</th>
-        <th>Amount</th>
-        <th>Currency</th>
-        <th>Paid By</th>
-      </tr>
-    </thead>
-    <tbody>
-    </tbody>
-  </table>
-</div>
-
-<div class="settlement-summary" id="settlement-summary">
-  <h2>Settlement Summary</h2>
-  <p>No settlements yet.</p>
-</div>
-
-<script>
-  const participants = [];
-  const transactions = [];
-  const balances = {};
-  const airtableToken = "patG3xfFhZGjGiXWt.8959878dca997d69972b237177713462c43fe7f385ab43d7d45ce500f104d703";
-  const airtableBaseID = "app7aGU54LVkhT1fd";
-
-  function addParticipant() {
-    const name = document.getElementById('new-participant').value;
-    if (name && !participants.includes(name)) {
-      participants.push(name);
-      balances[name] = { GBP: 0, EUR: 0, HKD: 0 };
-      updateParticipantsUI();
-    }
-    document.getElementById('new-participant').value = '';
-  }
-
-  function updateParticipantsUI() {
-    const selectPaidBy = document.getElementById('paid-by');
-    const splitAmountsDiv = document.getElementById('split-amounts');
-    const participantsList = document.getElementById('participants-list');
-
-    selectPaidBy.innerHTML = '';
-    splitAmountsDiv.innerHTML = '';
-    participantsList.innerHTML = participants.map(p => `<p>${p}</p>`).join('');
-
-    participants.forEach(participant => {
-      selectPaidBy.innerHTML += `<option value="${participant}">${participant}</option>`;
-      splitAmountsDiv.innerHTML += `
         <div class="form-group">
-          <label>${participant}</label>
-          <input type="number" class="split-input" data-participant="${participant}" placeholder="Split Amount">
+            <label for="participant-name">Add Participant:</label>
+            <input type="text" id="participant-name" placeholder="Enter participant name">
+            <button onclick="addParticipant()">Add</button>
         </div>
-      `;
-    });
-  }
 
-  function addExpense() {
-    const description = document.getElementById('description').value;
-    const amount = parseFloat(document.getElementById('amount').value);
-    const paidBy = document.getElementById('paid-by').value;
-    const currency = document.getElementById('currency').value;
-    const splitInputs = document.querySelectorAll('.split-input');
+        <ul class="participants-list" id="participants-list"></ul>
 
-    if (!description || isNaN(amount) || !paidBy || amount <= 0) {
-      alert('Please fill in all fields correctly.');
-      return;
-    }
+        <div class="form-group">
+            <label for="expense-description">Expense Description:</label>
+            <input type="text" id="expense-description" placeholder="Enter expense description">
+        </div>
 
-    let totalSplit = 0;
-    const splitValues = {};
-    splitInputs.forEach(input => {
-      const participant = input.dataset.participant;
-      const splitAmount = parseFloat(input.value) || 0;
-      splitValues[participant] = splitAmount;
-      totalSplit += splitAmount;
-    });
+        <div class="form-group">
+            <label for="expense-amount">Amount:</label>
+            <input type="number" id="expense-amount" placeholder="Enter amount">
+        </div>
 
-    if (Math.abs(totalSplit - amount) > 0.01) {
-      alert('Split amounts do not add up to the total amount.');
-      return;
-    }
+        <div class="form-group">
+            <label for="currency">Currency:</label>
+            <select id="currency">
+                <option value="GBP">GBP £</option>
+                <option value="EUR">EUR €</option>
+                <option value="HKD">HKD $</option>
+            </select>
+        </div>
 
-    // Record transaction
-    transactions.push({ description, amount, currency, paidBy, splitValues });
-    balances[paidBy][currency] += amount;
-    participants.forEach(participant => {
-      balances[participant][currency] -= splitValues[participant];
-    });
+        <div class="form-group">
+            <label for="paid-by">Paid By:</label>
+            <select id="paid-by"></select>
+        </div>
 
-    saveToAirt
+        <div class="form-group">
+            <label for="split-method">Split Method:</label>
+            <select id="split-method" onchange="updateSplitMethod()">
+                <option value="equally">Split Equally</option>
+                <option value="manual">Manual Input</option>
+            </select>
+        </div>
+
+        <div id="manual-split"></div>
+
+        <button onclick="addExpense()">Add Expense</button>
+
+        <ul id="expenses-list" class="summary"></ul>
+
+        <button onclick="calculateSettlement()">Calculate Settlement</button>
+
+        <div id="settlement-summary
