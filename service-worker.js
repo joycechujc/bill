@@ -1,12 +1,12 @@
 const CACHE_NAME = 'expense-splitter-v1';
 const urlsToCache = [
-  '/',
-  '/index.html',
-  '/styles.css',
-  '/script.js',
-  '/manifest.json',
-  '/icons/app_192.webp',
-  '/icons/app_512.webp'
+  '/bill/',
+  '/bill/index.html',
+  '/bill/styles.css',
+  '/bill/script.js',
+  '/bill/manifest.json',
+  '/bill/icons/app_192.webp',
+  '/bill/icons/app_512.webp'
 ];
 
 self.addEventListener('install', event => {
