@@ -200,22 +200,15 @@ async function loadExpenses() {
                 date: record.fields.Date || new Date().toISOString().split('T')[0]
             }));
 
-            // Update participants list from loaded expenses
-            const allParticipants = new Set();
-            expenses.forEach(expense => {
-                if (Array.isArray(expense.participants)) {
-                    expense.participants.forEach(p => allParticipants.add(p));
-                }
-            });
-            participants = Array.from(allParticipants);
-            console.log('Loaded expenses:', expenses);
-            console.log('Updated participants:', participants);
+            // SORT EXPENSES BY DATE (NEWEST FIRST)
+            expenses.sort((a, b) => new Date(b.date) - new Date(a.date));
         }
     } catch (error) {
         console.error('Error loading expenses:', error);
         throw new Error('Failed to load expenses');
     }
 }
+
 
 // Add new expense
 async function addExpense() {
@@ -598,16 +591,23 @@ function updateSplits() {
     const currency = document.getElementById('currencySelect').value;
     let total = 0;
     
-    // Calculate total of all splits
-    participants.forEach(name => {
+    // Loop through all participants and update their input fields
+    participants.forEach((name, index) => {
         const input = document.getElementById(`split-${name}`);
-        // Ensure value is positive and has max 2 decimal places
-        let value = parseFloat(input.value) || 0;
-        if (value < 0) value = 0;
-        value = parseFloat(value.toFixed(2));
-        input.value = value.toFixed(2); // Format display to 2 decimal places
-        total += value;
+        if (input) {
+            let value = parseFloat(input.value) || 0;
+            input.value = value.toFixed(2);  // Ensure two decimal places
+
+            // Allow last participant to edit their input
+            if (index === participants.length - 1) {
+                input.removeAttribute('readonly');
+            }
+
+            total += value;
+        }
     });
+}
+
 
     // Update total display
     const totalDisplay = document.getElementById('splitTotal');
