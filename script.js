@@ -598,6 +598,7 @@ function updateSplits() {
     }
 }
 
+
 // Edit expense
 function editExpense(expenseId) {
     const expense = expenses.find(e => e.id === expenseId);
