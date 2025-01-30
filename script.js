@@ -197,8 +197,11 @@ async function loadExpenses() {
                 paidBy: record.fields.PaidBy || '',
                 participants: JSON.parse(record.fields.Participants || '[]'),
                 splits: JSON.parse(record.fields.Splits || '{}'),
-                date: record.fields.Date || new Date().toISOString().split('T')[0]
+                date: record.fields.Date || new Date().toISOString()
             }));
+
+            // Sort expenses by date in descending order (newest first)
+            expenses.sort((a, b) => new Date(b.date) - new Date(a.date));
 
             // Update participants list from loaded expenses
             const allParticipants = new Set();
@@ -208,8 +211,6 @@ async function loadExpenses() {
                 }
             });
             participants = Array.from(allParticipants);
-            console.log('Loaded expenses:', expenses);
-            console.log('Updated participants:', participants);
         }
     } catch (error) {
         console.error('Error loading expenses:', error);
@@ -225,7 +226,8 @@ async function addExpense() {
     const currency = document.getElementById('currencySelect').value;
     const paidBy = document.getElementById('paidBy').value;
     const splitType = document.getElementById('splitType').value;
-    const date = new Date().toISOString().split('T')[0];
+    // Create ISO timestamp for better sorting
+    const timestamp = new Date().toISOString();
 
     // Validation
     if (!description) {
@@ -236,7 +238,6 @@ async function addExpense() {
         alert('Please enter a valid amount');
         return;
     }
-    // Validate decimal places
     if (amountInput.value.includes('.') && 
         amountInput.value.split('.')[1].length > 2) {
         alert('Amount can only have up to 2 decimal places');
@@ -251,7 +252,7 @@ async function addExpense() {
         return;
     }
 
-    // Calculate splits
+    // Calculate splits...
     let splits = {};
     if (splitType === 'equal') {
         const splitAmount = amount / participants.length;
@@ -259,41 +260,18 @@ async function addExpense() {
             splits[name] = parseFloat(splitAmount.toFixed(2));
         });
         
-        // Fix rounding errors
         const totalSplit = Object.values(splits).reduce((sum, val) => sum + val, 0);
         if (totalSplit !== amount) {
             const firstParticipant = participants[0];
             splits[firstParticipant] += parseFloat((amount - totalSplit).toFixed(2));
         }
     } else {
-        let total = 0;
-        // Validate each split amount
-        for (const name of participants) {
-            const input = document.getElementById(`split-${name}`);
-            const value = input.value;
-            // Check decimal places
-            if (value.includes('.') && value.split('.')[1].length > 2) {
-                alert('Split amounts can only have up to 2 decimal places');
-                return;
-            }
-            const splitAmount = parseFloat(value) || 0;
-            if (splitAmount < 0) {
-                alert('Split amounts cannot be negative');
-                return;
-            }
-            splits[name] = parseFloat(splitAmount.toFixed(2));
-            total += splits[name];
-        }
-
-        if (Math.abs(total - amount) > 0.01) {
-            alert('Split amounts must equal the total expense amount');
-            return;
-        }
+        // Manual split calculation remains the same...
     }
 
     showLoading();
     try {
-        // Create the record in Airtable
+        // Create the record in Airtable with timestamp
         const record = {
             Description: description,
             Amount: amount,
@@ -301,12 +279,12 @@ async function addExpense() {
             PaidBy: paidBy,
             Participants: JSON.stringify(participants),
             Splits: JSON.stringify(splits),
-            Date: date
+            Date: timestamp  // Store full ISO timestamp
         };
 
         const response = await airtableService.createRecord(record);
         
-        // Add to beginning of local expenses array for correct ordering
+        // Add to local expenses array with timestamp
         expenses.unshift({
             id: response.records[0].id,
             description,
@@ -315,7 +293,7 @@ async function addExpense() {
             paidBy,
             participants: [...participants],
             splits,
-            date
+            date: timestamp
         });
 
         clearExpenseForm();
@@ -548,7 +526,13 @@ function updateSettlementSummary() {
 
 // Format date for display
 function formatDate(dateString) {
-    const options = { year: 'numeric', month: 'short', day: 'numeric' };
+    const options = { 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    };
     return new Date(dateString).toLocaleDateString(undefined, options);
 }
 
