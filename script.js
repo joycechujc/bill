@@ -285,8 +285,9 @@ async function addExpense() {
             total += splits[name];
         }
 
+        total = parseFloat(total.toFixed(2));
         if (Math.abs(total - amount) > 0.01) {
-            alert('Split amounts must equal the total expense amount');
+            alert(`Total split amount (${total.toFixed(2)}) must equal the expense amount (${amount.toFixed(2)})`);
             return;
         }
     }
@@ -306,7 +307,7 @@ async function addExpense() {
 
         const response = await airtableService.createRecord(record);
         
-        // Add to beginning of local expenses array for correct ordering
+        // Add to beginning of local expenses array
         expenses.unshift({
             id: response.records[0].id,
             description,
@@ -563,7 +564,7 @@ function toggleSplitInputs() {
         splitAmounts.style.display = 'block';
         const equalSplit = amount / participants.length;
         
-        splitAmounts.innerHTML = participants.map((name, index) => `
+        splitAmounts.innerHTML = participants.map(name => `
             <div class="split-input">
                 <label>${name}</label>
                 <div class="input-group">
@@ -572,11 +573,21 @@ function toggleSplitInputs() {
                            id="split-${name}" 
                            value="${equalSplit.toFixed(2)}" 
                            step="0.01" 
-                           onchange="updateSplits()"
-                           ${index === participants.length - 1 ? 'readonly' : ''}>
+                           onchange="updateSplits()">
                 </div>
             </div>
         `).join('');
+
+        // Add total display
+        splitAmounts.innerHTML += `
+            <div class="split-total" style="margin-top: 15px; padding-top: 10px; border-top: 1px solid #ddd;">
+                <label>Total Split Amount:</label>
+                <div id="splitTotal" style="font-weight: bold;">
+                    ${getCurrencySymbol(currency)}${amount.toFixed(2)}
+                </div>
+                <div id="splitDifference" style="color: red; font-size: 0.9em;"></div>
+            </div>
+        `;
     } else {
         splitAmounts.style.display = 'none';
     }
@@ -584,10 +595,11 @@ function toggleSplitInputs() {
 
 function updateSplits() {
     const amount = parseFloat(document.getElementById('expenseAmount').value) || 0;
+    const currency = document.getElementById('currencySelect').value;
     let total = 0;
     
-    // Calculate total of all splits except last participant
-    participants.slice(0, -1).forEach(name => {
+    // Calculate total of all splits
+    participants.forEach(name => {
         const input = document.getElementById(`split-${name}`);
         // Ensure value is positive and has max 2 decimal places
         let value = parseFloat(input.value) || 0;
@@ -597,20 +609,23 @@ function updateSplits() {
         total += value;
     });
 
-    // Auto-calculate last participant's amount
-    const lastParticipant = participants[participants.length - 1];
-    if (lastParticipant) {
-        const lastInput = document.getElementById(`split-${lastParticipant}`);
-        const remainingAmount = parseFloat((amount - total).toFixed(2));
-        lastInput.value = Math.max(0, remainingAmount).toFixed(2);
-        
-        // Validate if total matches expense amount
-        const actualTotal = total + parseFloat(lastInput.value);
-        if (Math.abs(actualTotal - amount) > 0.01) {
-            lastInput.classList.add('negative-amount');
-        } else {
-            lastInput.classList.remove('negative-amount');
-        }
+    // Update total display
+    const totalDisplay = document.getElementById('splitTotal');
+    const differenceDisplay = document.getElementById('splitDifference');
+    const roundedTotal = parseFloat(total.toFixed(2));
+    
+    totalDisplay.textContent = `${getCurrencySymbol(currency)}${roundedTotal.toFixed(2)}`;
+    
+    if (Math.abs(roundedTotal - amount) > 0.01) {
+        const difference = amount - roundedTotal;
+        differenceDisplay.textContent = difference > 0 ? 
+            `Still needs to split: ${getCurrencySymbol(currency)}${difference.toFixed(2)}` :
+            `Over split by: ${getCurrencySymbol(currency)}${Math.abs(difference).toFixed(2)}`;
+        differenceDisplay.style.display = 'block';
+        totalDisplay.style.color = 'red';
+    } else {
+        differenceDisplay.style.display = 'none';
+        totalDisplay.style.color = 'green';
     }
 }
 
