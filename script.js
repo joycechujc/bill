@@ -184,32 +184,21 @@ function addParticipant() {
 }
 
 // Load all expenses from Airtable
-// Load all expenses from Airtable
 async function loadExpenses() {
     try {
         const data = await airtableService.getAllRecords();
         
         if (data && data.records) {
-            expenses = data.records.map(record => {
-                // Create a standardized date string for consistent comparison
-                const currentDate = record.fields.Date || new Date().toISOString();
-                const [datePart, timePart] = currentDate.split('T');
-                
-                return {
-                    id: record.id,
-                    description: record.fields.Description || '',
-                    amount: parseFloat(record.fields.Amount) || 0,
-                    currency: record.fields.Currency || 'GBP',
-                    paidBy: record.fields.PaidBy || '',
-                    participants: JSON.parse(record.fields.Participants || '[]'),
-                    splits: JSON.parse(record.fields.Splits || '{}'),
-                    date: datePart,
-                    timestamp: new Date(currentDate).getTime()
-                };
-            });
-
-            // Sort expenses by timestamp in descending order (newest first)
-            expenses.sort((a, b) => b.timestamp - a.timestamp);
+            expenses = data.records.map(record => ({
+                id: record.id,
+                description: record.fields.Description || '',
+                amount: parseFloat(record.fields.Amount) || 0,
+                currency: record.fields.Currency || 'GBP',
+                paidBy: record.fields.PaidBy || '',
+                participants: JSON.parse(record.fields.Participants || '[]'),
+                splits: JSON.parse(record.fields.Splits || '{}'),
+                date: record.fields.Date || new Date().toISOString().split('T')[0]
+            }));
 
             // Update participants list from loaded expenses
             const allParticipants = new Set();
@@ -219,7 +208,8 @@ async function loadExpenses() {
                 }
             });
             participants = Array.from(allParticipants);
-            console.log('Loaded and sorted expenses:', expenses);
+            console.log('Loaded expenses:', expenses);
+            console.log('Updated participants:', participants);
         }
     } catch (error) {
         console.error('Error loading expenses:', error);
@@ -235,12 +225,7 @@ async function addExpense() {
     const currency = document.getElementById('currencySelect').value;
     const paidBy = document.getElementById('paidBy').value;
     const splitType = document.getElementById('splitType').value;
-
-    // Create a precise timestamp for the current moment
-    const now = new Date();
-    const currentDate = now.toISOString();
-    const [datePart, timePart] = currentDate.split('T');
-    const timestamp = now.getTime();
+    const date = new Date().toISOString().split('T')[0];
 
     // Validation
     if (!description) {
@@ -251,6 +236,7 @@ async function addExpense() {
         alert('Please enter a valid amount');
         return;
     }
+    // Validate decimal places
     if (amountInput.value.includes('.') && 
         amountInput.value.split('.')[1].length > 2) {
         alert('Amount can only have up to 2 decimal places');
@@ -273,6 +259,7 @@ async function addExpense() {
             splits[name] = parseFloat(splitAmount.toFixed(2));
         });
         
+        // Fix rounding errors
         const totalSplit = Object.values(splits).reduce((sum, val) => sum + val, 0);
         if (totalSplit !== amount) {
             const firstParticipant = participants[0];
@@ -280,9 +267,11 @@ async function addExpense() {
         }
     } else {
         let total = 0;
+        // Validate each split amount
         for (const name of participants) {
             const input = document.getElementById(`split-${name}`);
             const value = input.value;
+            // Check decimal places
             if (value.includes('.') && value.split('.')[1].length > 2) {
                 alert('Split amounts can only have up to 2 decimal places');
                 return;
@@ -304,7 +293,7 @@ async function addExpense() {
 
     showLoading();
     try {
-        // Create the record in Airtable with the precise timestamp
+        // Create the record in Airtable
         const record = {
             Description: description,
             Amount: amount,
@@ -312,13 +301,13 @@ async function addExpense() {
             PaidBy: paidBy,
             Participants: JSON.stringify(participants),
             Splits: JSON.stringify(splits),
-            Date: currentDate  // Store full ISO string
+            Date: date
         };
 
         const response = await airtableService.createRecord(record);
         
-        // Create new expense object
-        const newExpense = {
+        // Add to beginning of local expenses array for correct ordering
+        expenses.unshift({
             id: response.records[0].id,
             description,
             amount,
@@ -326,16 +315,8 @@ async function addExpense() {
             paidBy,
             participants: [...participants],
             splits,
-            date: datePart,
-            timestamp: timestamp
-        };
-
-        // Add to expenses array and sort
-        expenses.push(newExpense);
-        expenses.sort((a, b) => b.timestamp - a.timestamp);
-
-        console.log('Added new expense:', newExpense);
-        console.log('Updated sorted expenses:', expenses);
+            date
+        });
 
         clearExpenseForm();
         updateUI();
@@ -347,7 +328,6 @@ async function addExpense() {
         hideLoading();
     }
 }
-
 
 // Clear the expense form
 function clearExpenseForm() {
