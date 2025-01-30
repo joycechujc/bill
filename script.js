@@ -220,8 +220,7 @@ async function loadExpenses() {
 // Add new expense
 async function addExpense() {
     const description = document.getElementById('expenseDescription').value.trim();
-    const amountInput = document.getElementById('expenseAmount');
-    const amount = parseFloat(amountInput.value);
+    const amount = parseFloat(document.getElementById('expenseAmount').value);
     const currency = document.getElementById('currencySelect').value;
     const paidBy = document.getElementById('paidBy').value;
     const splitType = document.getElementById('splitType').value;
@@ -234,12 +233,6 @@ async function addExpense() {
     }
     if (!amount || amount <= 0) {
         alert('Please enter a valid amount');
-        return;
-    }
-    // Validate decimal places
-    if (amountInput.value.includes('.') && 
-        amountInput.value.split('.')[1].length > 2) {
-        alert('Amount can only have up to 2 decimal places');
         return;
     }
     if (!paidBy) {
@@ -267,23 +260,12 @@ async function addExpense() {
         }
     } else {
         let total = 0;
-        // Validate each split amount
-        for (const name of participants) {
+        participants.forEach(name => {
             const input = document.getElementById(`split-${name}`);
-            const value = input.value;
-            // Check decimal places
-            if (value.includes('.') && value.split('.')[1].length > 2) {
-                alert('Split amounts can only have up to 2 decimal places');
-                return;
-            }
-            const splitAmount = parseFloat(value) || 0;
-            if (splitAmount < 0) {
-                alert('Split amounts cannot be negative');
-                return;
-            }
+            const splitAmount = parseFloat(input.value) || 0;
             splits[name] = parseFloat(splitAmount.toFixed(2));
             total += splits[name];
-        }
+        });
 
         if (Math.abs(total - amount) > 0.01) {
             alert('Split amounts must equal the total expense amount');
@@ -306,8 +288,8 @@ async function addExpense() {
 
         const response = await airtableService.createRecord(record);
         
-        // Add to beginning of local expenses array for correct ordering
-        expenses.unshift({
+        // Add to local expenses array
+        expenses.push({
             id: response.records[0].id,
             description,
             amount,
@@ -399,8 +381,13 @@ function updateExpensesList() {
         list.innerHTML = '<div class="empty-state">No expenses added yet</div>';
         return;
     }
+    
+    // Sort expenses by date, newest first
+    const sortedExpenses = [...expenses].sort((a, b) => 
+        new Date(b.date || '') - new Date(a.date || '')
+    );
 
-    list.innerHTML = expenses.map(e => {
+    list.innerHTML = sortedExpenses.map(e => {
         try {
             if (!e || typeof e.amount !== 'number') {
                 console.error('Invalid expense record:', e);
@@ -444,7 +431,7 @@ function updateExpensesList() {
             console.error('Error rendering expense:', error, e);
             return '';
         }
-    }).join('');
+    }).filter(html => html).join('');
 }
 
 // Update settlement summary display
@@ -590,12 +577,8 @@ function updateSplits() {
     // Calculate total of all splits except last participant
     participants.slice(0, -1).forEach(name => {
         const input = document.getElementById(`split-${name}`);
-        // Ensure value is positive and has max 2 decimal places
-        let value = parseFloat(input.value) || 0;
-        if (value < 0) value = 0;
-        value = parseFloat(value.toFixed(2));
-        input.value = value.toFixed(2); // Format display to 2 decimal places
-        total += value;
+        const splitAmount = parseFloat(input.value) || 0;
+        total += splitAmount;
     });
 
     // Auto-calculate last participant's amount
@@ -603,11 +586,10 @@ function updateSplits() {
     if (lastParticipant) {
         const lastInput = document.getElementById(`split-${lastParticipant}`);
         const remainingAmount = parseFloat((amount - total).toFixed(2));
-        lastInput.value = Math.max(0, remainingAmount).toFixed(2);
+        lastInput.value = remainingAmount;
         
-        // Validate if total matches expense amount
-        const actualTotal = total + parseFloat(lastInput.value);
-        if (Math.abs(actualTotal - amount) > 0.01) {
+        // Show warning if negative
+        if (remainingAmount < 0) {
             lastInput.classList.add('negative-amount');
         } else {
             lastInput.classList.remove('negative-amount');
