@@ -197,8 +197,16 @@ async function loadExpenses() {
                 paidBy: record.fields.PaidBy || '',
                 participants: JSON.parse(record.fields.Participants || '[]'),
                 splits: JSON.parse(record.fields.Splits || '{}'),
-                date: record.fields.Date || new Date().toISOString().split('T')[0]
+                date: record.fields.Date || new Date().toISOString().split('T')[0],
+                timestamp: record.fields.Date ? new Date(record.fields.Date).getTime() : 0
             }));
+
+            // Sort expenses by date (newest first)
+            expenses.sort((a, b) => {
+                const dateA = new Date(a.date).getTime();
+                const dateB = new Date(b.date).getTime();
+                return dateB - dateA;
+            });
 
             // Update participants list from loaded expenses
             const allParticipants = new Set();
@@ -208,8 +216,6 @@ async function loadExpenses() {
                 }
             });
             participants = Array.from(allParticipants);
-            console.log('Loaded expenses:', expenses);
-            console.log('Updated participants:', participants);
         }
     } catch (error) {
         console.error('Error loading expenses:', error);
@@ -218,6 +224,7 @@ async function loadExpenses() {
 }
 
 // Add new expense
+// Add new expense
 async function addExpense() {
     const description = document.getElementById('expenseDescription').value.trim();
     const amountInput = document.getElementById('expenseAmount');
@@ -225,7 +232,7 @@ async function addExpense() {
     const currency = document.getElementById('currencySelect').value;
     const paidBy = document.getElementById('paidBy').value;
     const splitType = document.getElementById('splitType').value;
-    const date = new Date().toISOString().split('T')[0];
+    const currentDate = new Date().toISOString().split('T')[0];
 
     // Validation
     if (!description) {
@@ -301,13 +308,13 @@ async function addExpense() {
             PaidBy: paidBy,
             Participants: JSON.stringify(participants),
             Splits: JSON.stringify(splits),
-            Date: date
+            Date: currentDate
         };
 
         const response = await airtableService.createRecord(record);
         
-        // Add to beginning of local expenses array for correct ordering
-        expenses.unshift({
+        // Create new expense object
+        const newExpense = {
             id: response.records[0].id,
             description,
             amount,
@@ -315,7 +322,16 @@ async function addExpense() {
             paidBy,
             participants: [...participants],
             splits,
-            date
+            date: currentDate,
+            timestamp: new Date(currentDate).getTime()
+        };
+
+        // Add to expenses array and sort
+        expenses.push(newExpense);
+        expenses.sort((a, b) => {
+            const dateA = new Date(a.date).getTime();
+            const dateB = new Date(b.date).getTime();
+            return dateB - dateA;
         });
 
         clearExpenseForm();
