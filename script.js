@@ -184,29 +184,32 @@ function addParticipant() {
 }
 
 // Load all expenses from Airtable
+// Load all expenses from Airtable
 async function loadExpenses() {
     try {
         const data = await airtableService.getAllRecords();
         
         if (data && data.records) {
-            expenses = data.records.map(record => ({
-                id: record.id,
-                description: record.fields.Description || '',
-                amount: parseFloat(record.fields.Amount) || 0,
-                currency: record.fields.Currency || 'GBP',
-                paidBy: record.fields.PaidBy || '',
-                participants: JSON.parse(record.fields.Participants || '[]'),
-                splits: JSON.parse(record.fields.Splits || '{}'),
-                date: record.fields.Date || new Date().toISOString().split('T')[0],
-                timestamp: record.fields.Date ? new Date(record.fields.Date).getTime() : 0
-            }));
-
-            // Sort expenses by date (newest first)
-            expenses.sort((a, b) => {
-                const dateA = new Date(a.date).getTime();
-                const dateB = new Date(b.date).getTime();
-                return dateB - dateA;
+            expenses = data.records.map(record => {
+                // Create a standardized date string for consistent comparison
+                const currentDate = record.fields.Date || new Date().toISOString();
+                const [datePart, timePart] = currentDate.split('T');
+                
+                return {
+                    id: record.id,
+                    description: record.fields.Description || '',
+                    amount: parseFloat(record.fields.Amount) || 0,
+                    currency: record.fields.Currency || 'GBP',
+                    paidBy: record.fields.PaidBy || '',
+                    participants: JSON.parse(record.fields.Participants || '[]'),
+                    splits: JSON.parse(record.fields.Splits || '{}'),
+                    date: datePart,
+                    timestamp: new Date(currentDate).getTime()
+                };
             });
+
+            // Sort expenses by timestamp in descending order (newest first)
+            expenses.sort((a, b) => b.timestamp - a.timestamp);
 
             // Update participants list from loaded expenses
             const allParticipants = new Set();
@@ -216,6 +219,7 @@ async function loadExpenses() {
                 }
             });
             participants = Array.from(allParticipants);
+            console.log('Loaded and sorted expenses:', expenses);
         }
     } catch (error) {
         console.error('Error loading expenses:', error);
@@ -224,7 +228,6 @@ async function loadExpenses() {
 }
 
 // Add new expense
-// Add new expense
 async function addExpense() {
     const description = document.getElementById('expenseDescription').value.trim();
     const amountInput = document.getElementById('expenseAmount');
@@ -232,7 +235,12 @@ async function addExpense() {
     const currency = document.getElementById('currencySelect').value;
     const paidBy = document.getElementById('paidBy').value;
     const splitType = document.getElementById('splitType').value;
-    const currentDate = new Date().toISOString().split('T')[0];
+
+    // Create a precise timestamp for the current moment
+    const now = new Date();
+    const currentDate = now.toISOString();
+    const [datePart, timePart] = currentDate.split('T');
+    const timestamp = now.getTime();
 
     // Validation
     if (!description) {
@@ -243,7 +251,6 @@ async function addExpense() {
         alert('Please enter a valid amount');
         return;
     }
-    // Validate decimal places
     if (amountInput.value.includes('.') && 
         amountInput.value.split('.')[1].length > 2) {
         alert('Amount can only have up to 2 decimal places');
@@ -266,7 +273,6 @@ async function addExpense() {
             splits[name] = parseFloat(splitAmount.toFixed(2));
         });
         
-        // Fix rounding errors
         const totalSplit = Object.values(splits).reduce((sum, val) => sum + val, 0);
         if (totalSplit !== amount) {
             const firstParticipant = participants[0];
@@ -274,11 +280,9 @@ async function addExpense() {
         }
     } else {
         let total = 0;
-        // Validate each split amount
         for (const name of participants) {
             const input = document.getElementById(`split-${name}`);
             const value = input.value;
-            // Check decimal places
             if (value.includes('.') && value.split('.')[1].length > 2) {
                 alert('Split amounts can only have up to 2 decimal places');
                 return;
@@ -300,7 +304,7 @@ async function addExpense() {
 
     showLoading();
     try {
-        // Create the record in Airtable
+        // Create the record in Airtable with the precise timestamp
         const record = {
             Description: description,
             Amount: amount,
@@ -308,7 +312,7 @@ async function addExpense() {
             PaidBy: paidBy,
             Participants: JSON.stringify(participants),
             Splits: JSON.stringify(splits),
-            Date: currentDate
+            Date: currentDate  // Store full ISO string
         };
 
         const response = await airtableService.createRecord(record);
@@ -322,17 +326,16 @@ async function addExpense() {
             paidBy,
             participants: [...participants],
             splits,
-            date: currentDate,
-            timestamp: new Date(currentDate).getTime()
+            date: datePart,
+            timestamp: timestamp
         };
 
         // Add to expenses array and sort
         expenses.push(newExpense);
-        expenses.sort((a, b) => {
-            const dateA = new Date(a.date).getTime();
-            const dateB = new Date(b.date).getTime();
-            return dateB - dateA;
-        });
+        expenses.sort((a, b) => b.timestamp - a.timestamp);
+
+        console.log('Added new expense:', newExpense);
+        console.log('Updated sorted expenses:', expenses);
 
         clearExpenseForm();
         updateUI();
@@ -344,6 +347,7 @@ async function addExpense() {
         hideLoading();
     }
 }
+
 
 // Clear the expense form
 function clearExpenseForm() {
