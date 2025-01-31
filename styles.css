@@ -7,8 +7,8 @@
 }
 
 body {
-    background-color: #004b84; /* Keep the background color as requested */
-    color: white; /* Changed text color to white as requested */
+    background-color: #1a365d;
+    color: #333;
     padding: 20px;
     min-height: 100vh;
 }
@@ -18,86 +18,49 @@ body {
     margin: 0 auto;
 }
 
-/* New Refresh Button Table */
-.refresh-table {
-    background: #79c9fa;
-    border-radius: 15px;
-    padding: 20px;
-    margin-bottom: 20px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    text-align: right;
-}
-
-/* Card styles with updated colors */
+/* Card styles */
 .card {
+    background: white;
     border-radius: 15px;
     padding: 20px;
     margin-bottom: 20px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    color: white; /* Text color for all cards */
-}
-
-/* Specific card background colors */
-.card:nth-of-type(1) {
-    background: #ffa5c6; /* Participants section */
-}
-
-.card:nth-of-type(2) {
-    background: #79c9fa; /* Add expenses section */
-}
-
-.card:nth-of-type(3) {
-    background: #f974a6; /* Expenses list section */
-}
-
-.card:nth-of-type(4) {
-    background: #ffa5c6; /* Settlement Summary section */
 }
 
 .card h2 {
-    color: white;
+    color: #2c3e50;
     margin-bottom: 20px;
     padding-bottom: 10px;
-    border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+    border-bottom: 2px solid #f0f2f5;
 }
 
-/* Add emojis to headings and labels */
-.card h2:nth-of-type(1)::before {
-    content: "👥 ";
+/* Form styles */
+.form-group {
+    margin-bottom: 15px;
 }
 
-#expenseFormTitle::before {
-    content: "💰 ";
+label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #2c3e50;
 }
 
-label[for="expenseDescription"]::before,
-label:contains("Description")::before {
-    content: "📝 ";
+input, select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    font-size: 14px;
+    transition: border-color 0.3s ease;
 }
 
-label[for="expenseAmount"]::before,
-label:contains("Amount")::before {
-    content: "💵 ";
+input:focus, select:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
 }
-
-label[for="currencySelect"]::before,
-label:contains("Currency")::before {
-    content: "🌍 ";
-}
-
-label[for="paidBy"]::before,
-label:contains("Paid by")::before {
-    content: "👤 ";
-}
-
-.card h2:contains("Expenses List")::before {
-    content: "📋 ";
-}
-
-.card h2:contains("Settlement Summary")::before {
-    content: "🤝 ";
-}
-
 
 /* Button styles */
 .button-group {
