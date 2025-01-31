@@ -114,6 +114,26 @@ button {
     background-color: #2980b9;
 }
 
+.refresh-btn {
+    background-color: #2ecc71;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 10px;
+    vertical-align: middle;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.refresh-btn:hover {
+    background-color: #27ae60;
+}
+
 /* List styles */
 .participants-list, .expenses-list {
     margin-top: 20px;
