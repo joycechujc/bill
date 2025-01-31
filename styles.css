@@ -18,6 +18,44 @@ body {
     margin: 0 auto;
 }
 
+
+/* Add emojis to headings and labels */
+.card h2:nth-of-type(1)::before {
+    content: "👥 ";
+}
+
+#expenseFormTitle::before {
+    content: "💰 ";
+}
+
+label[for="expenseDescription"]::before,
+label:contains("Description")::before {
+    content: "📝 ";
+}
+
+label[for="expenseAmount"]::before,
+label:contains("Amount")::before {
+    content: "💵 ";
+}
+
+label[for="currencySelect"]::before,
+label:contains("Currency")::before {
+    content: "🌍 ";
+}
+
+label[for="paidBy"]::before,
+label:contains("Paid by")::before {
+    content: "👤 ";
+}
+
+.card h2:contains("Expenses List")::before {
+    content: "📋 ";
+}
+
+.card h2:contains("Settlement Summary")::before {
+    content: "🤝 ";
+}
+
 /* Card styles */
 .card {
     background: white;
