@@ -7,8 +7,8 @@
 }
 
 body {
-    background-color: #004b84;
-    color: white;
+    background-color: #1a365d;
+    color: #333;
     padding: 20px;
     min-height: 100vh;
 }
@@ -16,49 +16,6 @@ body {
 .container {
     max-width: 1200px;
     margin: 0 auto;
-}
-
-/* Refresh Button Table */
-.refresh-table {
-    background: #79c9fa;
-    border-radius: 15px;
-    padding: 20px;
-    margin-bottom: 20px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    text-align: right;
-}
-
-/* Card styles */
-.card {
-    border-radius: 15px;
-    padding: 20px;
-    margin-bottom: 20px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    color: white;
-}
-
-/* Specific card background colors */
-.card:nth-of-type(1) {
-    background: #ffa5c6; /* Participants section */
-}
-
-.card:nth-of-type(2) {
-    background: #79c9fa; /* Add expenses section */
-}
-
-.card:nth-of-type(3) {
-    background: #f974a6; /* Expenses list section */
-}
-
-.card:nth-of-type(4) {
-    background: #ffa5c6; /* Settlement Summary section */
-}
-
-.card h2 {
-    color: white;
-    margin-bottom: 20px;
-    padding-bottom: 10px;
-    border-bottom: 2px solid rgba(255, 255, 255, 0.2);
 }
 
 /* Card styles */
