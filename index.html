@@ -24,10 +24,15 @@
             </button>
         </div>
         
+        <!-- Add Participant Toggle Button -->
+        <button id="toggleParticipantsBtn" class="toggle-btn">
+            <span>Add Participants</span>
+            <span class="material-icons">expand_more</span>
+        </button>
+
         <!-- Participants Section -->
-        <div class="card">
-                <h2>👭 Add Participants</h2>
-            
+        <div class="card hidden" id="participantsCard">
+            <h2>👭 Add Participants</h2>
             <div class="form-group">
                 <input type="text" id="participantName" placeholder="Enter participant name">
                 <button id="addParticipantBtn">Add Participant</button>
@@ -60,7 +65,7 @@
                 <!-- Add this after the "Paid By" select -->
                 <label>Present Participants:</label>
                 <div class="participants-checkbox">
-                <div id="presentParticipants" class="checkbox-group"></div>
+                    <div id="presentParticipants" class="checkbox-group"></div>
                 </div>
                 
                 <label>Split Type:</label>
@@ -114,17 +119,17 @@
     <script src="script.js"></script>
 
     <script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/service-worker.js')
-        .then(registration => {
-          console.log('ServiceWorker registration successful');
-        })
-        .catch(err => {
-          console.log('ServiceWorker registration failed: ', err);
-        });
-    });
-  }
-</script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then(registration => {
+                        console.log('ServiceWorker registration successful');
+                    })
+                    .catch(err => {
+                        console.log('ServiceWorker registration failed: ', err);
+                    });
+            });
+        }
+    </script>
 </body>
 </html>
