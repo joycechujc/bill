@@ -20,7 +20,7 @@ body {
 
 
 /* Add emojis to headings and labels */
-.card h2:nth-of-type(1)::before {
+.card h2:contains("Add Participants")::before {
     content: "👭 ";
 }
 
