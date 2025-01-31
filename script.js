@@ -120,25 +120,7 @@ document.addEventListener('DOMContentLoaded', function() {
             toggleSplitInputs();
         }
     });
-    //add people//
-    function initializeParticipantsToggle() {
-    const toggleBtn = document.getElementById('toggleParticipantsBtn');
-    const participantsForm = document.getElementById('participantsForm');
     
-    toggleBtn.addEventListener('click', function() {
-        const isVisible = participantsForm.style.display === 'block';
-        participantsForm.style.display = isVisible ? 'none' : 'block';
-        toggleBtn.classList.toggle('active');
-        
-        // Update icon based on state
-        const icon = toggleBtn.querySelector('.material-icons');
-        if (isVisible) {
-            icon.textContent = 'add';
-        } else {
-            icon.textContent = 'add';
-        }
-    });
-}
     // Initialize loading spinner
     initializeLoadingSpinner();
     
