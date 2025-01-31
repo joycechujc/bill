@@ -145,6 +145,11 @@ async function initialize() {
     try {
         await loadExpenses();
         updateUI();
+
+        // Add refresh button event listener
+        document.getElementById('refreshPageBtn').addEventListener('click', function() {
+            location.reload();
+        });
     } catch (error) {
         console.error('Failed to initialize:', error);
         alert('Failed to load expenses. Please refresh the page.');
