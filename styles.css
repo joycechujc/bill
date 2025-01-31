@@ -18,6 +18,14 @@ body {
     margin: 0 auto;
 }
 
+/* Top buttons group */
+.top-buttons {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
 /* Toggle button styles */
 .toggle-btn {
     background-color: #3498db;
@@ -29,7 +37,6 @@ body {
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-bottom: 20px;
     border: none;
     transition: background-color 0.3s ease;
 }
@@ -44,6 +51,24 @@ body {
 
 .toggle-btn.active .material-icons {
     transform: rotate(180deg);
+}
+
+.refresh-btn {
+    background-color: #2ecc71;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    width: 45px;
+    height: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.refresh-btn:hover {
+    background-color: #27ae60;
 }
 
 .hidden {
@@ -144,26 +169,6 @@ button {
 
 .edit-btn:hover {
     background-color: #2980b9;
-}
-
-.refresh-btn {
-    background-color: #2ecc71;
-    color: white;
-    border: none;
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-left: 10px;
-    vertical-align: middle;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-}
-
-.refresh-btn:hover {
-    background-color: #27ae60;
 }
 
 /* List styles */
