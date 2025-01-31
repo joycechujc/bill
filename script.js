@@ -105,6 +105,15 @@ let currentEditId = null;
 
 // Initialize when page loads
 document.addEventListener('DOMContentLoaded', function() {
+    // Set up participants toggle
+    const toggleBtn = document.getElementById('toggleParticipantsBtn');
+    const participantsCard = document.getElementById('participantsCard');
+    
+    toggleBtn.addEventListener('click', function() {
+        participantsCard.classList.toggle('hidden');
+        toggleBtn.classList.toggle('active');
+    });
+
     // Set up all the button clicks and changes
     document.getElementById('addParticipantBtn').addEventListener('click', addParticipant);
     document.getElementById('splitType').addEventListener('change', toggleSplitInputs);
@@ -352,6 +361,68 @@ function removeParticipant(name) {
     updateUI();
 }
 
+// Handle split type toggle
+function toggleSplitInputs() {
+    const splitType = document.getElementById('splitType').value;
+    const splitAmounts = document.getElementById('splitAmounts');
+    const amount = parseFloat(document.getElementById('expenseAmount').value) || 0;
+    const currency = document.getElementById('currencySelect').value;
+    
+    if (splitType === 'manual') {
+        splitAmounts.style.display = 'block';
+        const equalSplit = amount / participants.length;
+        
+        splitAmounts.innerHTML = participants.map((name, index) => `
+            <div class="split-input">
+                <label>${name}</label>
+                <div class="input-group">
+                    <span class="currency-symbol">${getCurrencySymbol(currency)}</span>
+                    <input type="number" 
+                           id="split-${name}" 
+                           value="${equalSplit.toFixed(2)}" 
+                           step="0.01" 
+                           onchange="updateSplits()"
+                           ${index === participants.length - 1 ? 'readonly' : ''}>
+                </div>
+            </div>
+        `).join('');
+    } else {
+        splitAmounts.style.display = 'none';
+    }
+}
+
+function updateSplits() {
+    const amount = parseFloat(document.getElementById('expenseAmount').value) || 0;
+    let total = 0;
+    
+    // Calculate total of all splits except last participant
+    participants.slice(0, -1).forEach(name => {
+        const input = document.getElementById(`split-${name}`);
+        // Ensure value is positive and has max 2 decimal places
+        let value = parseFloat(input.value) || 0;
+        if (value < 0) value = 0;
+        value = parseFloat(value.toFixed(2));
+        input.value = value.toFixed(2); // Format display to 2 decimal places
+        total += value;
+    });
+
+    // Auto-calculate last participant's amount
+    const lastParticipant = participants[participants.length - 1];
+    if (lastParticipant) {
+        const lastInput = document.getElementById(`split-${lastParticipant}`);
+        const remainingAmount = parseFloat((amount - total).toFixed(2));
+        lastInput.value = Math.max(0, remainingAmount).toFixed(2);
+        
+        // Validate if total matches expense amount
+        const actualTotal = total + parseFloat(lastInput.value);
+        if (Math.abs(actualTotal - amount) > 0.01) {
+            lastInput.classList.add('negative-amount');
+        } else {
+            lastInput.classList.remove('negative-amount');
+        }
+    }
+}
+
 // Update all UI elements
 function updateUI() {
     updateParticipantsList();
@@ -383,6 +454,18 @@ function updateParticipantsList() {
         participants.map(name =>
             `<option value="${name}">${name}</option>`
         ).join('');
+}
+
+// Format date for display
+function formatDate(dateString) {
+    const options = { 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    };
+    return new Date(dateString).toLocaleDateString(undefined, options);
 }
 
 // Update expenses list
@@ -540,221 +623,6 @@ function updateSettlementSummary() {
     summaryDiv.innerHTML = settlementHtml || '<div class="empty-state">All settled up!</div>';
 }
 
-// Format date for display
-function formatDate(dateString) {
-    const options = { 
-        year: 'numeric', 
-        month: 'short', 
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-    };
-    return new Date(dateString).toLocaleDateString(undefined, options);
-}
-
-// Handle split type toggle
-function toggleSplitInputs() {
-    const splitType = document.getElementById('splitType').value;
-    const splitAmounts = document.getElementById('splitAmounts');
-    const amount = parseFloat(document.getElementById('expenseAmount').value) || 0;
-    const currency = document.getElementById('currencySelect').value;
-    
-    if (splitType === 'manual') {
-        splitAmounts.style.display = 'block';
-        const equalSplit = amount / participants.length;
-        
-        splitAmounts.innerHTML = participants.map((name, index) => `
-            <div class="split-input">
-                <label>${name}</label>
-                <div class="input-group">
-                    <span class="currency-symbol">${getCurrencySymbol(currency)}</span>
-                    <input type="number" 
-                           id="split-${name}" 
-                           value="${equalSplit.toFixed(2)}" 
-                           step="0.01" 
-                           onchange="updateSplits()"
-                           ${index === participants.length - 1 ? 'readonly' : ''}>
-                </div>
-            </div>
-        `).join('');
-    } else {
-        splitAmounts.style.display = 'none';
-    }
-}
-
-function updateSplits() {
-    const amount = parseFloat(document.getElementById('expenseAmount').value) || 0;
-    let total = 0;
-    
-    // Calculate total of all splits except last participant
-    participants.slice(0, -1).forEach(name => {
-        const input = document.getElementById(`split-${name}`);
-        // Ensure value is positive and has max 2 decimal places
-        let value = parseFloat(input.value) || 0;
-        if (value < 0) value = 0;
-        value = parseFloat(value.toFixed(2));
-        input.value = value.toFixed(2); // Format display to 2 decimal places
-        total += value;
-    });
-
-    // Auto-calculate last participant's amount
-    const lastParticipant = participants[participants.length - 1];
-    if (lastParticipant) {
-        const lastInput = document.getElementById(`split-${lastParticipant}`);
-        const remainingAmount = parseFloat((amount - total).toFixed(2));
-        lastInput.value = Math.max(0, remainingAmount).toFixed(2);
-        
-        // Validate if total matches expense amount
-        const actualTotal = total + parseFloat(lastInput.value);
-        if (Math.abs(actualTotal - amount) > 0.01) {
-            lastInput.classList.add('negative-amount');
-        } else {
-            lastInput.classList.remove('negative-amount');
-        }
-    }
-}
-
-
-// Edit expense
-function editExpense(expenseId) {
-    const expense = expenses.find(e => e.id === expenseId);
-    if (!expense) return;
-
-    // Set current edit ID
-    currentEditId = expenseId;
-
-    // Update form title and button
-    document.getElementById('expenseFormTitle').textContent = 'Edit Expense';
-    const addButton = document.getElementById('addExpenseBtn');
-    addButton.textContent = 'Update Expense';
-
-    // Show cancel button
-    const cancelButton = document.getElementById('cancelEditBtn');
-    cancelButton.style.display = 'inline-block';
-    cancelButton.onclick = cancelEdit;
-
-    // Fill the form with expense details
-    document.getElementById('expenseDescription').value = expense.description;
-    document.getElementById('expenseAmount').value = expense.amount;
-    document.getElementById('currencySelect').value = expense.currency;
-    document.getElementById('paidBy').value = expense.paidBy;
-
-    // Show split amounts
-    document.getElementById('splitType').value = 'manual';
-    toggleSplitInputs();
-    Object.entries(expense.splits).forEach(([name, amount]) => {
-        const input = document.getElementById(`split-${name}`);
-        if (input) {
-            input.value = amount;
-        }
-    });
-
-    // Scroll to form
-    document.querySelector('.card').scrollIntoView({ behavior: 'smooth' });
-}
-
-// Cancel editing
-function cancelEdit() {
-    clearExpenseForm();
-    updateUI();
-}
-
-// Update expense record
-async function updateExpenseRecord(expenseId) {
-    const description = document.getElementById('expenseDescription').value.trim();
-    const amount = parseFloat(document.getElementById('expenseAmount').value);
-    const currency = document.getElementById('currencySelect').value;
-    const paidBy = document.getElementById('paidBy').value;
-    const splitType = document.getElementById('splitType').value;
-
-    // Validation
-    if (!description || !amount || !paidBy) {
-        alert('Please fill in all required fields');
-        return;
-    }
-
-    // Calculate splits
-    let splits = {};
-    if (splitType === 'equal') {
-        const splitAmount = amount / participants.length;
-        participants.forEach(name => {
-            splits[name] = parseFloat(splitAmount.toFixed(2));
-        });
-    } else {
-        let total = 0;
-        participants.forEach(name => {
-            const input = document.getElementById(`split-${name}`);
-            const splitAmount = parseFloat(input.value) || 0;
-            splits[name] = splitAmount;
-            total += splitAmount;
-        });
-
-        // Strict validation with a small tolerance for floating-point arithmetic
-        if (Math.abs(total - amount) > 0.01) {
-            alert(`Split amounts (${total.toFixed(2)}) must exactly equal the total expense amount (${amount.toFixed(2)})`);
-            return;
-        }
-    }
-
-    showLoading();
-    try {
-        const updatedFields = {
-            Description: description,
-            Amount: amount,
-            Currency: currency,
-            PaidBy: paidBy,
-            Splits: JSON.stringify(splits),
-            Participants: JSON.stringify(participants)
-        };
-
-        await airtableService.updateRecord(expenseId, updatedFields);
-        
-        // Update local state
-        expenses = expenses.map(e => 
-            e.id === expenseId 
-                ? { 
-                    ...e, 
-                    description,
-                    amount,
-                    currency,
-                    paidBy,
-                    splits,
-                    participants: [...participants]
-                } 
-                : e
-        );
-
-        clearExpenseForm();
-        updateUI();
-        alert('Expense updated successfully');
-    } catch (error) {
-        console.error('Error updating expense:', error);
-        alert('Failed to update expense. Please try again.');
-    } finally {
-        hideLoading();
-    }
-}
-
-// Delete expense
-async function deleteExpense(expenseId) {
-    if (!confirm('Are you sure you want to delete this expense?')) {
-        return;
-    }
-
-    showLoading();
-    try {
-        await airtableService.deleteRecord(expenseId);
-        expenses = expenses.filter(e => e.id !== expenseId);
-        updateUI();
-        alert('Expense deleted successfully');
-    } catch (error) {
-        console.error('Error deleting expense:', error);
-        alert('Failed to delete expense. Please try again.');
-    } finally {
-        hideLoading();
-    }
-}
-
 // Calculate settlements
 function calculateSettlement() {
     // If no participants or expenses, return empty results
@@ -848,4 +716,144 @@ function calculateSettlement() {
     });
 
     return { settlements, totals, balances };
+}
+
+// Edit expense
+function editExpense(expenseId) {
+    const expense = expenses.find(e => e.id === expenseId);
+    if (!expense) return;
+
+    // Set current edit ID
+    currentEditId = expenseId;
+
+    // Update form title and button
+    document.getElementById('expenseFormTitle').textContent = 'Edit Expense';
+    const addButton = document.getElementById('addExpenseBtn');
+    addButton.textContent = 'Update Expense';
+
+    // Show cancel button
+    const cancelButton = document.getElementById('cancelEditBtn');
+    cancelButton.style.display = 'inline-block';
+    cancelButton.onclick = cancelEdit;
+
+    // Fill the form with expense details
+    document.getElementById('expenseDescription').value = expense.description;
+    document.getElementById('expenseAmount').value = expense.amount;
+    document.getElementById('currencySelect').value = expense.currency;
+    document.getElementById('paidBy').value = expense.paidBy;
+
+    // Show split amounts
+    document.getElementById('splitType').value = 'manual';
+    toggleSplitInputs();
+    Object.entries(expense.splits).forEach(([name, amount]) => {
+        const input = document.getElementById(`split-${name}`);
+        if (input) {
+            input.value = amount;
+        }
+    });
+
+    // Scroll to form
+    document.querySelector('.card').scrollIntoView({ behavior: 'smooth' });
+}
+
+// Cancel editing
+function cancelEdit() {
+    clearExpenseForm();
+    updateUI();
+}
+
+// Delete expense
+async function deleteExpense(expenseId) {
+    if (!confirm('Are you sure you want to delete this expense?')) {
+        return;
+    }
+
+    showLoading();
+    try {
+        await airtableService.deleteRecord(expenseId);
+        expenses = expenses.filter(e => e.id !== expenseId);
+        updateUI();
+        alert('Expense deleted successfully');
+    } catch (error) {
+        console.error('Error deleting expense:', error);
+        alert('Failed to delete expense. Please try again.');
+    } finally {
+        hideLoading();
+    }
+}
+
+// Update expense record
+async function updateExpenseRecord(expenseId) {
+    const description = document.getElementById('expenseDescription').value.trim();
+    const amount = parseFloat(document.getElementById('expenseAmount').value);
+    const currency = document.getElementById('currencySelect').value;
+    const paidBy = document.getElementById('paidBy').value;
+    const splitType = document.getElementById('splitType').value;
+
+    // Validation
+    if (!description || !amount || !paidBy) {
+        alert('Please fill in all required fields');
+        return;
+    }
+
+    // Calculate splits
+    let splits = {};
+    if (splitType === 'equal') {
+        const splitAmount = amount / participants.length;
+        participants.forEach(name => {
+            splits[name] = parseFloat(splitAmount.toFixed(2));
+        });
+    } else {
+        let total = 0;
+        participants.forEach(name => {
+            const input = document.getElementById(`split-${name}`);
+            const splitAmount = parseFloat(input.value) || 0;
+            splits[name] = splitAmount;
+            total += splitAmount;
+        });
+
+        // Strict validation with a small tolerance for floating-point arithmetic
+        if (Math.abs(total - amount) > 0.01) {
+            alert(`Split amounts (${total.toFixed(2)}) must exactly equal the total expense amount (${amount.toFixed(2)})`);
+            return;
+        }
+    }
+
+    showLoading();
+    try {
+        const updatedFields = {
+            Description: description,
+            Amount: amount,
+            Currency: currency,
+            PaidBy: paidBy,
+            Splits: JSON.stringify(splits),
+            Participants: JSON.stringify(participants)
+        };
+
+        await airtableService.updateRecord(expenseId, updatedFields);
+        
+        // Update local state
+        expenses = expenses.map(e => 
+            e.id === expenseId 
+                ? { 
+                    ...e, 
+                    description,
+                    amount,
+                    currency,
+                    paidBy,
+                    splits,
+                    participants: [...participants]
+                } 
+                : e
+        );
+
+        clearExpenseForm();
+        updateUI();
+        alert('Expense updated successfully');
+    } catch (error) {
+        console.error('Error updating expense:', error);
+        alert('Failed to update expense. Please try again.');
+    } finally {
+        hideLoading();
+    }
 }
