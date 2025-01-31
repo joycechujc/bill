@@ -226,7 +226,6 @@ async function addExpense() {
     const currency = document.getElementById('currencySelect').value;
     const paidBy = document.getElementById('paidBy').value;
     const splitType = document.getElementById('splitType').value;
-    // Create ISO timestamp for better sorting
     const timestamp = new Date().toISOString();
 
     // Validation
@@ -252,7 +251,7 @@ async function addExpense() {
         return;
     }
 
-    // Calculate splits...
+    // Calculate splits
     let splits = {};
     if (splitType === 'equal') {
         const splitAmount = amount / participants.length;
@@ -266,7 +265,19 @@ async function addExpense() {
             splits[firstParticipant] += parseFloat((amount - totalSplit).toFixed(2));
         }
     } else {
-        // Manual split calculation remains the same...
+        let total = 0;
+        participants.forEach(name => {
+            const input = document.getElementById(`split-${name}`);
+            const splitAmount = parseFloat(input.value) || 0;
+            splits[name] = splitAmount;
+            total += splitAmount;
+        });
+
+        // Strict validation with a small tolerance for floating-point arithmetic
+        if (Math.abs(total - amount) > 0.01) {
+            alert(`Split amounts (${total.toFixed(2)}) must exactly equal the total expense amount (${amount.toFixed(2)})`);
+            return;
+        }
     }
 
     showLoading();
@@ -279,7 +290,7 @@ async function addExpense() {
             PaidBy: paidBy,
             Participants: JSON.stringify(participants),
             Splits: JSON.stringify(splits),
-            Date: timestamp  // Store full ISO timestamp
+            Date: timestamp
         };
 
         const response = await airtableService.createRecord(record);
@@ -673,8 +684,9 @@ async function updateExpenseRecord(expenseId) {
             total += splitAmount;
         });
 
+        // Strict validation with a small tolerance for floating-point arithmetic
         if (Math.abs(total - amount) > 0.01) {
-            alert('Split amounts must equal the total expense amount');
+            alert(`Split amounts (${total.toFixed(2)}) must exactly equal the total expense amount (${amount.toFixed(2)})`);
             return;
         }
     }
