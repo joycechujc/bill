@@ -7,8 +7,8 @@
 }
 
 body {
-    background-color: #1a365d;
-    color: #333;
+    background-color: #004b84; /* Keep the background color as requested */
+    color: white; /* Changed text color to white as requested */
     padding: 20px;
     min-height: 100vh;
 }
@@ -18,22 +18,14 @@ body {
     margin: 0 auto;
 }
 
-
-/* Add emojis to headings and labels */
-.card h2:contains("Add Participants")::before {
-    content: "👭 ";
-}
-
-#expenseFormTitle::before {
-    content: "💰 ";
-}
-
-.card h2:contains("Expenses List")::before {
-    content: "📋 ";
-}
-
-.card h2:contains("Settlement Summary")::before {
-    content: "🤝 ";
+/* New Refresh Button Table */
+.refresh-table {
+    background: #79c9fa;
+    border-radius: 15px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    text-align: right;
 }
 
 /* Card styles */
